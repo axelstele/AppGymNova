@@ -4,6 +4,11 @@ import { Header, ListItem  } from 'react-native-elements';
 import CalendarStrip from 'react-native-calendar-strip';
 import moment from "moment";
 import Toast from 'react-native-root-toast';
+import axios from 'axios';
+
+import Constants from "expo-constants";
+const { manifest } = Constants;
+const uri = `http://${manifest.debuggerHost.split(':').shift()}:8000`;
 
 const styles = StyleSheet.create({
   container: {
@@ -17,60 +22,113 @@ const styles = StyleSheet.create({
   },
 });
 
-export default class HomeScreen extends Component { 
+export default class HomeScreen extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
       isLoading: false,
-      actividad: 'Fútbol',
       showToast: false,
-      textToast: ''
+      textToast: '',
+      selectedDate: new Date(),
+      clases: [],
+      selectedClase: -1,
+      id_usuario: -1
     }
   }
 
-  onChangeDate(date) {
-    this.setState({ actividad: 'otra' })
+  componentDidMount() {
+    this.setState({ isLoading: true }, async () => {
+      let id_usuario = await AsyncStorage.getItem('id_usuario');
+      id_usuario = parseInt(id_usuario, 10);
+      this.setState({ id_usuario }, async () => {
+        await this.refreshClases();
+        this.setState({ isLoading: false });
+      })
+    })
+  }
+
+  async refreshClases() {
+    const { selectedDate } = this.state;
+
+    try {
+      let res = await axios.post(uri + '/api/get_clases', {
+        dia: selectedDate,
+        empresa: '1'
+      });
+      this.setState({ clases: res.data });
+    }
+    catch(error) {
+      console.log(error);
+    }
+  }
+
+  onChangeDate(selectedDate) {
+    this.setState({ isLoading: true, selectedDate }, async () => {
+      await this.refreshClases();
+      this.setState({ isLoading: false });
+    })
   }
 
   cerrarSesion() {
     this.setState({ isLoading: true }, async () => {
       await AsyncStorage.removeItem('isLogged');
-      this.props.navigation.navigate('Auth');
-      this.setState({ isLoading: false });
+      await AsyncStorage.removeItem('id_usuario');
+      this.setState({ isLoading: false }, () => {
+        this.props.navigation.navigate('Auth');
+      })
     })
   }
 
-  onPressActividad(actividad) {
+  onPressActividad(clase) {
     Alert.alert(
       'Confirmación',
-      '¿Está seguro que desea adherirse a la clase de XXXXX en el horario ' + actividad + '?',
+      '¿Está seguro que desea adherirse a la clase de ' + clase.clase_actividad +' en el horario de las ' + clase.clase_hora_inicio + '?',
       [
-        { text: 'Confirmar', onPress: () => this.cargarActividad() },
+        { text: 'Confirmar', onPress: () => this.adherirClase(clase) },
         {
-          text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel',
+          text: 'Cancel', style: 'cancel',
         },
 
       ],
       { cancelable: false }
-    );
+    )
   }
 
-  cargarActividad() {
-    this.setState({ textToast: 'Adherido lince!', showToast: true })
+  adherirClase(clase) {
+    const { id_usuario } = this.state;
+
+    this.setState({ isLoading: true }, async () => {
+      try {
+        let res = await axios.post(uri + '/api/adherir_clase', {
+          empresa: '1',
+          id_clase: clase.id,
+          id_usuario: id_usuario
+        });
+
+        this.setState({ textToast: res.data.message, showToast: true }, async () => {
+          await this.refreshClases();
+          this.setState({ isLoading: false });
+        })
+      }
+      catch(error) {
+        console.log(error);
+      }
+    })
   }
 
   render() {
-    const { actividad, showToast, textToast, isLoading } = this.state;
+    const { showToast, textToast, isLoading, selectedDate, selectedClase, clases } = this.state;
 
     return (
-      <View>
+      <View style={{ flex: 1 }}>
         <Header
           leftComponent={{ icon: 'menu', color: '#fff', onPress: () => this.props.navigation.openDrawer() }}
-          centerComponent={{ text: 'HOME', style: { color: '#fff' } }}
+          centerComponent={{ text: 'Clases', style: { color: '#fff' } }}
           rightComponent={{ icon: 'home', color: '#fff' }}
         />
         <CalendarStrip
+          selectedDate={selectedDate}
           calendarAnimation={{type: 'sequence', duration: 100}}
           daySelectionAnimation={{type: 'border', duration: 200, borderWidth: 1, borderHighlightColor: 'white'}}
           calendarHeaderStyle={{color: 'white'}}
@@ -83,6 +141,7 @@ export default class HomeScreen extends Component {
           disabledDateNumberStyle={{color: 'grey'}}
           onDateSelected={(date) => this.onChangeDate(date)}
           style={{height:150, paddingTop: 20, paddingBottom: 10}}
+          refreshing={isLoading}
           locale={{
             name:'es',
             config: {
@@ -94,20 +153,20 @@ export default class HomeScreen extends Component {
           }}
         />
         <FlatList
-          data={[{key: '00:00'}, {key: '01:00'}, {key: '02:00'}, {key: '03:00'}, {key: '04:00'}, {key: '05:00'}, {key: '06:00'}, {key: '07:00'},
-                 {key: '08:00'}, {key: '09:00'}, {key: '10:00'}, {key: '11:00'}, {key: '12:00'}, {key: '13:00'}, {key: '14:00'}, {key: '15:00'},
-                 {key: '16:00'}, {key: '17:00'}, {key: '18:00'}, {key: '19:00'}, {key: '20:00'}, {key: '21:00'}, {key: '22:00'}, {key: '23:00'},
-                 {key: '24:00'}]}
-          renderItem={({item, index}) =>
+          data={clases}
+          renderItem={({item}) =>
             <ListItem
-              key={index}
-              title={actividad}
-              subtitle={item.key}
+              title={item.clase_actividad}
+              subtitle={item.clase_hora_inicio}
               bottomDivider
-              onPress={() => this.onPressActividad(item.key)}
+              onPress={() => this.onPressActividad(item)}
               titleStyle={{ flex: 1, justifyContent: 'center' }}
+              disabled={(item.clase_cupos_actual >= item.clase_cupos) || item.clase_cancelada || !item.clase_activo}
+              disabledStyle={{ backgroundColor: 'grey' }}
+              badge={{ value: item.clase_cupos_actual + '/' + item.clase_cupos, containerStyle: { marginTop: -20 } }}
             />
           }
+          keyExtractor={item => item.id.toString()}
         />
         <Toast
           visible={showToast}

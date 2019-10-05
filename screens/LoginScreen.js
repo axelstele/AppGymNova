@@ -5,6 +5,10 @@ import { StyleSheet, Text, View, ImageBackground } from 'react-native';
 import { Input, Button } from 'react-native-elements';
 import axios from 'axios';
 
+import Constants from "expo-constants";
+const { manifest } = Constants;
+const uri = `http://${manifest.debuggerHost.split(':').shift()}:8000`;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -31,24 +35,21 @@ export default class LoginScreen extends Component {
 
     this.setState({ isLoading: true }, async () => {
       try {
-        let response = await axios.post('https://sportcenterbahia.herokuapp.com/api/login', {
+        let res = await axios.post(uri + '/api/login', {
           email: email,
           password: password
         });
-        this.setState({ isLoading: false }, async () => {
-          if (response.data) {
-            try {
-              await AsyncStorage.setItem('isLogged', '1');
-              this.props.navigation.navigate('App');
-            }
-            catch (e) {
-              console.log(e);
-            }
-          }
-        });
+
+        if (res.data.logged) {
+          await AsyncStorage.setItem('isLogged', '1');
+          await AsyncStorage.setItem('id_usuario', res.data.id_usuario.toString());
+          this.setState({ isLoading: false }, () => {
+            this.props.navigation.navigate('App')
+          });
+        }
       }
-      catch (e) {
-        console.log(e.response) // undefined
+      catch (error) {
+        console.log(error) // undefined
         this.setState({ isLoading: false });
       }
 
