@@ -1,8 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import React, { Component } from 'react';
-import { Alert, AsyncStorage } from 'react-native';
-import { StyleSheet, Text, View, ImageBackground } from 'react-native';
-import { Input, Button } from 'react-native-elements';
+import { Alert, AsyncStorage, StyleSheet, Text, View, ImageBackground } from 'react-native';
+import { Input, Button, Image } from 'react-native-elements';
 import axios from 'axios';
 
 import Constants from "expo-constants";
@@ -12,8 +11,21 @@ const uri = `http://${manifest.debuggerHost.split(':').shift()}:8000`;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  input: {
+    marginLeft: 5
+  },
+  image: {
+    marginTop: 50,
+    width: 200,
+    height: 200,
+    marginBottom: 50
+  },
+  bottom: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginBottom: 36
   }
 });
 
@@ -49,7 +61,7 @@ export default class LoginScreen extends Component {
         }
       }
       catch (error) {
-        console.log(error) // undefined
+        console.log(error)
         this.setState({ isLoading: false });
       }
 
@@ -61,8 +73,12 @@ export default class LoginScreen extends Component {
 
     return (
       <View style={styles.container}>
+        <Image
+          source={require('../assets/images/logo_SC_oscuro.png') }
+          containerStyle={styles.image}
+        />
         <Input
-          style={styles.input}
+          inputStyle={styles.input}
           id='email'
           name='email'
           value={email}
@@ -71,9 +87,10 @@ export default class LoginScreen extends Component {
           leftIcon={{ type: 'font-awesome', name: 'envelope' }}
           autoCapitalize = 'none'
           disabled={isLoading}
+          containerStyle={{ margin: 20 }}
         />
         <Input
-          style={styles.input}
+          inputStyle={styles.input}
           id='password'
           name='password'
           value={password}
@@ -83,17 +100,20 @@ export default class LoginScreen extends Component {
           secureTextEntry={true}
           disabled={isLoading}
         />
-        <Button
-          title="Iniciar sesión"
-          icon={{
-            type: 'font-awesome',
-            name: "sign-in",
-            size: 15,
-            color: "white"
-          }}
-          loading={isLoading}
-          onPress={() => this.iniciarSesion()}
-        />
+        <View style={styles.bottom}>
+          <Button
+            title="Iniciar sesión"
+            icon={{
+              type: 'font-awesome',
+              name: "sign-in",
+              color: "black"
+            }}
+            buttonStyle={{ backgroundColor: '#18bc9c', width: '100%' }}
+            titleStyle={{ color: 'black' }}
+            loading={isLoading}
+            onPress={() => this.iniciarSesion()}
+          />
+        </View>
       </View>
     )
   }

@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
+import MisPagosScreen from '../screens/MisPagosScreen';
+import MisClasesScreen from '../screens/MisClasesScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SideBar from '../components/SideBar';
 
@@ -51,6 +53,18 @@ const AppStack = createStackNavigator(
   {
     Home: {
       screen: HomeScreen,
+      navigationOptions: {
+        header: null
+      }
+    },
+    MisPagos: {
+      screen: MisPagosScreen,
+      navigationOptions: {
+        header: null
+      }
+    },
+    MisClases: {
+      screen: MisClasesScreen,
       navigationOptions: {
         header: null
       }

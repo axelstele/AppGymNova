@@ -7,7 +7,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     alignItems: 'center',
-    paddingTop: 20,
+    paddingTop: 20
   },
   sideMenuHeader: {
     flexDirection: 'row',
@@ -35,11 +35,25 @@ export default class SideBar extends Component {
         navOptionThumb: 'home',
         navOptionName: 'Inicio',
         screenToNavigate: 'Home',
+        type: 'font-awesome'
+      },
+      {
+        navOptionThumb: 'dollar',
+        navOptionName: 'Mis Pagos',
+        screenToNavigate: 'MisPagos',
+        type: 'font-awesome'
+      },
+      {
+        navOptionThumb: 'directions-run',
+        navOptionName: 'Mis Clases',
+        screenToNavigate: 'MisClases',
+        type: 'material'
       },
       {
         navOptionThumb: 'sign-out',
         navOptionName: 'Salir',
         screenToNavigate: 'Login',
+        type: 'font-awesome'
       }
     ];
   }
@@ -72,17 +86,18 @@ export default class SideBar extends Component {
                   alignItems: 'center',
                   paddingTop: 10,
                   paddingBottom: 10,
-                  backgroundColor: global.currentScreenIndex === key ? '#e0dbdb' : '#ffffff',
+                  backgroundColor: global.currentScreenIndex === key ? '#18bc9c' : 'white',
                 }}
               >
                 <View style={{ marginRight: 10, marginLeft: 20 }}>
-                  <Icon name={item.navOptionThumb} size={25} color="#808080" type='font-awesome'/>
+                  <Icon name={item.navOptionThumb} size={25} color="black" type={item.type}/>
                 </View>
                 <Text
                   style={{
                     fontSize: 15,
                     color: 'black',
                     fontWeight: 'bold',
+                    marginLeft: 10
                   }}
                 >
                   {item.navOptionName}
@@ -92,12 +107,12 @@ export default class SideBar extends Component {
             </TouchableOpacity>
           ))}
         </View>
-        {/*<View style={{justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{justifyContent: 'center', alignItems: 'center'}}>
           <Image
-            source={require('../img/app.png')}
-            style={{height: 200, width: 200, resizeMode: 'contain', flex: 1, justifyContent: 'flex-end' }}
+            source={require('../assets/images/logo_SC_oscuro.png')}
+            style={{height: 150, width: 150, resizeMode: 'contain', flex: 1, justifyContent: 'flex-end' }}
           />
-        </View>*/}
+        </View>
       </View>
     );
   }
