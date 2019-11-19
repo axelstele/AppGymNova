@@ -88,16 +88,6 @@ export default class HomeScreen extends Component {
     })
   }
 
-  cerrarSesion() {
-    this.setState({ isLoading: true }, async () => {
-      await AsyncStorage.removeItem('isLogged');
-      await AsyncStorage.removeItem('id_usuario');
-      this.setState({ isLoading: false }, () => {
-        this.props.navigation.navigate('Auth');
-      })
-    })
-  }
-
   onPressActividad(clase) {
     Alert.alert(
       'Confirmación',
@@ -204,7 +194,7 @@ export default class HomeScreen extends Component {
           disabledDateNameStyle={{color: 'grey'}}
           disabledDateNumberStyle={{color: 'grey'}}
           onDateSelected={(date) => this.onChangeDate(date)}
-          style={{height:100, paddingTop: 10, paddingBottom: 10}}
+          style={{ height:100, paddingTop: 10, paddingBottom: 10 }}
           refreshing={isLoading}
           locale={{
             name:'es',
@@ -215,6 +205,16 @@ export default class HomeScreen extends Component {
               weekdaysShort : 'dom_lun_mar_mie_jue_vie_sab'.split('_'),
               weekdaysMin : 'Do_Lu_Ma_Mi_Ju_Vi_Sa'.split('_'),}
           }}
+          markedDates={
+            clasesMiembro.map((claseMiembro) => (
+              {
+                date: moment(claseMiembro.clase_fecha),
+                dots: [
+                    { key: 1, color: moment(claseMiembro.clase_fecha).format('YYYY-MM-DD') < moment().format('YYYY-MM-DD') ? '#f8cdc8' : '#18bc9c' },
+                ]
+              }
+            ))
+          }
         />
         { clases.length == 0 ?
             <Text h3 style={{ textAlign: 'center' }}>No se encontraron clases</Text>
@@ -230,7 +230,7 @@ export default class HomeScreen extends Component {
                   subtitle={item.clase_hora_inicio + " hs."}
                   bottomDivider
                   onPress={() => this.onPressActividad(item) }
-                  titleStyle={{ flex: 1, justifyContent: 'center' }}
+                  titleStyle={{ flex: 1, justifyContent: 'center', fontWeight: 'bold' }}
                   disabled={ (item.clase_cupos - item.clase_cupos_actual >= item.clase_cupos) || item.clase_cancelada || !item.clase_activo ||
                     moment(item.clase_fecha+ " " + item.clase_hora_inicio).format('YYYY-MM-DD HH:mm') < moment().format('YYYY-MM-DD HH:mm') ||
                     clasesMiembro.some(claseMiembro => claseMiembro.clase_id == item.id)
@@ -242,14 +242,13 @@ export default class HomeScreen extends Component {
                       textStyle: { color: 'black'}, badgeStyle: { backgroundColor: 'white'} } : undefined}
                   rightIcon={
                     clasesMiembro.some(claseMiembro => claseMiembro.clase_id == item.id) &&
-                      moment(item.clase_fecha+ " " + item.clase_hora_inicio).format('YYYY-MM-DD HH:mm') > moment().format('YYYY-MM-DD HH:mm') ?
+                      moment(item.clase_fecha+ " " + item.clase_hora_inicio).format('YYYY-MM-DD HH:mm') > moment().format('YYYY-MM-DD HH:mm') &&
                       <Icon
                         size={32}
                         onPress={() => this.onCancelarClase(item)}
                         name='times-circle'
                         type='font-awesome'
                       />
-                    : null
                   }
                 />
               }

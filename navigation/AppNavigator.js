@@ -13,6 +13,7 @@ import HomeScreen from '../screens/HomeScreen';
 import MisPagosScreen from '../screens/MisPagosScreen';
 import MisClasesScreen from '../screens/MisClasesScreen';
 import LoginScreen from '../screens/LoginScreen';
+import MisDatosScreen from '../screens/MisDatosScreen';
 import SideBar from '../components/SideBar';
 
 const styles = StyleSheet.create({
@@ -65,6 +66,12 @@ const AppStack = createStackNavigator(
     },
     MisClases: {
       screen: MisClasesScreen,
+      navigationOptions: {
+        header: null
+      }
+    },
+    MisDatos: {
+      screen: MisDatosScreen,
       navigationOptions: {
         header: null
       }

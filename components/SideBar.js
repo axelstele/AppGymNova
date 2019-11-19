@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Icon, Text } from 'react-native-elements';
+import { View, StyleSheet, TouchableOpacity, AsyncStorage, Alert } from 'react-native';
+import { Icon, Text, Button, Image } from 'react-native-elements';
 
 const styles = StyleSheet.create({
   sideMenuContainer: {
@@ -30,6 +30,10 @@ export default class SideBar extends Component {
   constructor(props) {
     super(props);
 
+    this.state = {
+      isLoading: false
+    }
+
     this.items = [
       {
         navOptionThumb: 'home',
@@ -50,18 +54,47 @@ export default class SideBar extends Component {
         type: 'material'
       },
       {
-        navOptionThumb: 'sign-out',
-        navOptionName: 'Salir',
-        screenToNavigate: 'Login',
+        navOptionThumb: 'user',
+        navOptionName: 'Mis datos',
+        screenToNavigate: 'MisDatos',
         type: 'font-awesome'
       }
     ];
   }
 
+  onPressCerrarSesion(clase) {
+    Alert.alert(
+      'Confirmación',
+      '¿Está seguro que desea cerrar sesión?',
+      [
+        { text: 'Confirmar', onPress: () => this.cerrarSesion() },
+        {
+          text: 'Cancel', style: 'cancel',
+        },
+      ],
+      { cancelable: false }
+    )
+  }
+
+  cerrarSesion() {
+    this.setState({ isLoading: true }, async () => {
+      await AsyncStorage.removeItem('isLogged');
+      await AsyncStorage.removeItem('id_usuario');
+      this.setState({ isLoading: false }, () => {
+        this.props.navigation.navigate('Auth');
+      })
+    })
+  }
+
   render() {
+    const { isLoading } = this.state;
+
     return (
       <View style={styles.sideMenuContainer}>
-        {/*Top Large Image */}
+        <Image
+          source={require('../assets/images/logo_SC_oscuro.png')}
+          containerStyle={{height: 150, width: 150 }}
+        />
         <View style={styles.sideMenuHeader}>
           <Text
             style={{
@@ -107,10 +140,19 @@ export default class SideBar extends Component {
             </TouchableOpacity>
           ))}
         </View>
-        <View style={{justifyContent: 'center', alignItems: 'center'}}>
-          <Image
-            source={require('../assets/images/logo_SC_oscuro.png')}
-            style={{height: 150, width: 150, resizeMode: 'contain', flex: 1, justifyContent: 'flex-end' }}
+        <View style={{ flex: 1, justifyContent: 'center', justifyContent: 'flex-end' }}>
+          <Button
+            title="Cerrar sesión"
+            icon={{
+              type: 'font-awesome',
+              name: "sign-out",
+              color: "black"
+            }}
+            buttonStyle={{ backgroundColor: '#18bc9c', width: '100%' }}
+            containerStyle={{ margin: 10 }}
+            titleStyle={{ color: 'black', fontWeight: 'bold' }}
+            loading={isLoading}
+            onPress={() => this.onPressCerrarSesion()}
           />
         </View>
       </View>

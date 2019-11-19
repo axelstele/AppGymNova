@@ -83,6 +83,16 @@ export default class MisPagosScreen extends Component {
                 >
                   <Text>
                     <Text style={{ fontWeight: 'bold' }}>
+                      Clases:
+                    </Text>
+                    <Text>{" " + item.cupos_cantidad + " / "}</Text>
+                    <Text style={{ fontWeight: 'bold' }}>
+                      Disponibles:
+                    </Text>
+                    <Text>{" " + item.cupos_disponibles}</Text>
+                  </Text>
+                  <Text>
+                    <Text style={{ fontWeight: 'bold' }}>
                       Desde:
                     </Text>
                     <Text>{" " + moment(item.fecha_desde).format('DD/MM/YYYY')}</Text>
