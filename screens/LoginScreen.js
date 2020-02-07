@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { Alert, AsyncStorage, StyleSheet, Text, View, ImageBackground } from 'react-native';
 import { Input, Button, Image, Card, CheckBox } from 'react-native-elements';
 import axios from 'axios';
+import Toast from 'react-native-root-toast';
 
 import Constants from "expo-constants";
 const { manifest } = Constants;
@@ -66,10 +67,34 @@ export default class LoginScreen extends Component {
             this.props.navigation.navigate('App')
           });
         }
+        else {
+          this.setState({ isLoading: false }, () => {
+            Toast.show('Verifique los datos ingresados', {
+              duration: Toast.durations.SHORT,
+              position: Toast.positions.BOTTOM,
+              shadow: true,
+              animation: true,
+              hideOnPress: true,
+              delay: 0,
+              textColor: 'black',
+              backgroundColor: '#18bc9c'
+            });
+          })
+        }
       }
       catch (error) {
-        console.log(error)
-        this.setState({ isLoading: false });
+        this.setState({ isLoading: false }, () => {
+          Toast.show('Ocurrió un error, intente nuevamente', {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.BOTTOM,
+            shadow: true,
+            animation: true,
+            hideOnPress: true,
+            delay: 0,
+            textColor: 'black',
+            backgroundColor: '#18bc9c'
+          });
+        });
       }
 
     });
