@@ -1,11 +1,13 @@
 import React, { Component } from "react";
 import {
-  View,
-  StyleSheet,
   ActivityIndicator,
-  AsyncStorage
+  AsyncStorage,
+  StyleSheet,
+  TouchableOpacity,
+  View
 } from "react-native";
-import { Header, Card, Input, Button, CheckBox } from "react-native-elements";
+import { Header, Input, Button, CheckBox } from "react-native-elements";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import moment from "moment";
 import Toast from "react-native-root-toast";
 import axios from "axios";
@@ -33,15 +35,16 @@ export default class MisDatosScreen extends Component {
     super(props);
 
     this.state = {
+      apellido: "",
+      email: "",
+      fechaIngreso: "",
+      fechaNac: null,
+      id_usuario: -1,
       isLoading: false,
       nombre: "",
-      apellido: "",
-      sexo: "",
-      telefono: "",
-      fechaNac: "",
-      fechaIngreso: "",
-      email: "",
-      id_usuario: -1
+      sexo: null,
+      showModalFechaNac: false,
+      telefono: ""
     };
   }
 
@@ -64,13 +67,12 @@ export default class MisDatosScreen extends Component {
         empresa: id_empresa,
         id_usuario: id_usuario
       });
-
       this.setState({
         nombre: res.data.nombre,
         apellido: res.data.apellido,
         sexo: res.data.sexo,
         telefono: res.data.telefono,
-        fechaNac: res.data.fecha_nac,
+        fechaNac: moment(res.data.fecha_nac, "YYYY-MM-DD").toDate(),
         fechaIngreso: res.data.fecha_ing,
         email: res.data.email
       });
@@ -79,16 +81,34 @@ export default class MisDatosScreen extends Component {
     }
   }
 
+  handleConfirm = date => {
+    console.warn("A date has been picked: ", date);
+    this.handleHideModalFechaNac();
+  };
+
+  handleShowModalFechaNac = () => {
+    this.setState({ showModalFechaNac: true });
+  };
+
+  handleHideModalFechaNac = () => {
+    this.setState({ showModalFechaNac: false });
+  };
+
+  handleSexoChange = sexo => {
+    this.setState({ sexo });
+  };
+
   render() {
     const {
+      apellido,
+      email,
+      fechaIngreso,
+      fechaNac,
       isLoading,
       nombre,
-      apellido,
       sexo,
-      telefono,
-      fechaNac,
-      fechaIngreso,
-      email
+      showModalFechaNac,
+      telefono
     } = this.state;
 
     return (
@@ -103,48 +123,109 @@ export default class MisDatosScreen extends Component {
           backgroundColor="#212529"
         />
         <Input
-          inputStyle={styles.input}
-          id="nombre"
-          name="nombre"
-          value={nombre}
-          onChangeText={text => this.handleChange("nombre", text)}
-          placeholder="Nombre"
+          containerStyle={{ marginTop: 20 }}
           disabled={isLoading}
-          containerStyle={{ margin: 20 }}
+          id="nombre"
+          inputStyle={styles.input}
+          label="Nombre"
+          name="nombre"
+          onChangeText={text => this.handleChange("nombre", text)}
+          value={nombre}
         />
         <Input
-          inputStyle={styles.input}
-          id="apellido"
-          name="apellido"
-          value={apellido}
-          onChangeText={text => this.handleChange("apellido", text)}
-          placeholder="Apellido"
+          containerStyle={{ marginTop: 20 }}
           disabled={isLoading}
-          containerStyle={{ margin: 20 }}
+          id="apellido"
+          inputStyle={styles.input}
+          label="Apellido"
+          name="apellido"
+          onChangeText={text => this.handleChange("apellido", text)}
+          value={apellido}
         />
-        <View style={{ display: "flex", flexDirection: "row" }}>
-          <CheckBox center title="M" checked={sexo === "M"} />
-          <CheckBox center title="F" checked={sexo === "F"} />
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "center",
+            marginTop: 20
+          }}
+        >
+          <CheckBox
+            title="M"
+            checked={sexo === "M"}
+            onPress={() => this.handleSexoChange("M")}
+            containerStyle={{ backgroundColor: "transparent", borderWidth: 0 }}
+            checkedColor="#18bc9c"
+          />
+          <CheckBox
+            title="F"
+            checked={sexo === "F"}
+            onPress={() => this.handleSexoChange("F")}
+            containerStyle={{ backgroundColor: "transparent", borderWidth: 0 }}
+            checkedColor="#18bc9c"
+          />
         </View>
         <Input
-          inputStyle={styles.input}
-          id="email"
-          name="email"
-          value={email}
-          onChangeText={text => this.handleChange("email", text)}
-          placeholder="E-mail"
+          containerStyle={{ marginTop: 20 }}
           disabled={true}
-          containerStyle={{ margin: 20 }}
+          id="email"
+          inputStyle={styles.input}
+          label="E-mail"
+          name="email"
+          onChangeText={text => this.handleChange("email", text)}
+          value={email}
         />
         <Input
-          inputStyle={styles.input}
-          id="telefono"
-          name="telefono"
-          value={telefono}
-          onChangeText={text => this.handleChange("telefono", text)}
-          placeholder="Teléfono"
+          containerStyle={{ marginTop: 20 }}
           disabled={isLoading}
-          containerStyle={{ margin: 20 }}
+          id="telefono"
+          inputStyle={styles.input}
+          label="Teléfono"
+          name="telefono"
+          onChangeText={text => this.handleChange("telefono", text)}
+          value={telefono}
+        />
+        <TouchableOpacity onPress={() => this.handleShowModalFechaNac()}>
+          <Input
+            containerStyle={{ marginTop: 20 }}
+            disabled={isLoading}
+            id="fechaNac"
+            inputStyle={styles.input}
+            label="Fecha de nacimiento"
+            name="fechaNac"
+            pointerEvents="none"
+            value={moment(fechaNac).format("DD/MM/YYYY")}
+          />
+        </TouchableOpacity>
+        {showModalFechaNac && (
+          <DateTimePickerModal
+            date={fechaNac}
+            isVisible={true}
+            mode="date"
+            onConfirm={() => this.handleConfirm()}
+            onCancel={() => this.handleHideModalFechaNac()}
+          />
+        )}
+        <Input
+          containerStyle={{ marginTop: 20 }}
+          disabled={true}
+          id="fechaIngreso"
+          inputStyle={styles.input}
+          label="Fecha de ingreso"
+          name="fechaIngreso"
+          value={moment(fechaIngreso).format("DD/MM/YYYY")}
+        />
+        <Button
+          title="Guardar cambios"
+          icon={{
+            type: "font-awesome",
+            name: "sign-in",
+            color: "black"
+          }}
+          buttonStyle={{ backgroundColor: "#18bc9c", width: "100%" }}
+          titleStyle={{ color: "black", fontWeight: "bold" }}
+          loading={isLoading}
+          onPress={() => this.iniciarSesion()}
         />
         {isLoading && (
           <View
