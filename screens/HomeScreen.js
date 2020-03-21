@@ -2,11 +2,9 @@ import React, { Component } from "react";
 import {
   View,
   Text,
-  Button,
   AsyncStorage,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   ActivityIndicator,
   Alert
 } from "react-native";

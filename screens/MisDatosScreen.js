@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, Fragment } from "react";
 import {
   ActivityIndicator,
   AsyncStorage,
@@ -81,21 +81,60 @@ export default class MisDatosScreen extends Component {
     }
   }
 
-  handleConfirm = date => {
-    console.warn("A date has been picked: ", date);
-    this.handleHideModalFechaNac();
+  handleConfirmFechaNac = fechaNac => {
+    this.setState({ fechaNac }, () => this.handleModalFechaNacChange());
   };
 
-  handleShowModalFechaNac = () => {
-    this.setState({ showModalFechaNac: true });
-  };
-
-  handleHideModalFechaNac = () => {
-    this.setState({ showModalFechaNac: false });
+  handleModalFechaNacChange = () => {
+    const { showModalFechaNac } = this.state;
+    this.setState({ showModalFechaNac: !showModalFechaNac });
   };
 
   handleSexoChange = sexo => {
     this.setState({ sexo });
+  };
+
+  handleChange(name, value) {
+    this.setState({ [name]: value });
+  }
+
+  handleCambiarDatos = () => {
+    const {
+      apellido,
+      fechaNac,
+      id_usuario,
+      nombre,
+      sexo,
+      telefono
+    } = this.state;
+
+    this.setState({ isLoading: true }, async () => {
+      try {
+        const res = await axios.post(uri + "/api/modificar_datos", {
+          empresa: id_empresa,
+          id_usuario: id_usuario,
+          apellido: apellido,
+          nombre: nombre,
+          fecha_nac: fechaNac,
+          sexo: sexo,
+          telefono: telefono
+        });
+        let toast = Toast.show(res.data.message, {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c"
+        });
+        await Promise.all([this.refreshDatos()]);
+        this.setState({ isLoading: false });
+      } catch (error) {
+        console.log(error);
+      }
+    });
   };
 
   render() {
@@ -112,7 +151,7 @@ export default class MisDatosScreen extends Component {
     } = this.state;
 
     return (
-      <View style={{ flex: 1 }}>
+      <Fragment>
         <Header
           leftComponent={{
             icon: "menu",
@@ -122,128 +161,139 @@ export default class MisDatosScreen extends Component {
           centerComponent={{ text: "Mis datos", style: { color: "#fff" } }}
           backgroundColor="#212529"
         />
-        <Input
-          containerStyle={{ marginTop: 20 }}
-          disabled={isLoading}
-          id="nombre"
-          inputStyle={styles.input}
-          label="Nombre"
-          name="nombre"
-          onChangeText={text => this.handleChange("nombre", text)}
-          value={nombre}
-        />
-        <Input
-          containerStyle={{ marginTop: 20 }}
-          disabled={isLoading}
-          id="apellido"
-          inputStyle={styles.input}
-          label="Apellido"
-          name="apellido"
-          onChangeText={text => this.handleChange("apellido", text)}
-          value={apellido}
-        />
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "center",
-            marginTop: 20
-          }}
-        >
-          <CheckBox
-            title="M"
-            checked={sexo === "M"}
-            onPress={() => this.handleSexoChange("M")}
-            containerStyle={{ backgroundColor: "transparent", borderWidth: 0 }}
-            checkedColor="#18bc9c"
-          />
-          <CheckBox
-            title="F"
-            checked={sexo === "F"}
-            onPress={() => this.handleSexoChange("F")}
-            containerStyle={{ backgroundColor: "transparent", borderWidth: 0 }}
-            checkedColor="#18bc9c"
-          />
-        </View>
-        <Input
-          containerStyle={{ marginTop: 20 }}
-          disabled={true}
-          id="email"
-          inputStyle={styles.input}
-          label="E-mail"
-          name="email"
-          onChangeText={text => this.handleChange("email", text)}
-          value={email}
-        />
-        <Input
-          containerStyle={{ marginTop: 20 }}
-          disabled={isLoading}
-          id="telefono"
-          inputStyle={styles.input}
-          label="Teléfono"
-          name="telefono"
-          onChangeText={text => this.handleChange("telefono", text)}
-          value={telefono}
-        />
-        <TouchableOpacity onPress={() => this.handleShowModalFechaNac()}>
+        <View style={{ padding: 20 }}>
           <Input
             containerStyle={{ marginTop: 20 }}
             disabled={isLoading}
-            id="fechaNac"
+            id="nombre"
             inputStyle={styles.input}
-            label="Fecha de nacimiento"
-            name="fechaNac"
-            pointerEvents="none"
-            value={moment(fechaNac).format("DD/MM/YYYY")}
+            label="Nombre"
+            name="nombre"
+            onChangeText={text => this.handleChange("nombre", text)}
+            value={nombre}
           />
-        </TouchableOpacity>
-        {showModalFechaNac && (
-          <DateTimePickerModal
-            date={fechaNac}
-            isVisible={true}
-            mode="date"
-            onConfirm={() => this.handleConfirm()}
-            onCancel={() => this.handleHideModalFechaNac()}
+          <Input
+            containerStyle={{ marginTop: 20 }}
+            disabled={isLoading}
+            id="apellido"
+            inputStyle={styles.input}
+            label="Apellido"
+            name="apellido"
+            onChangeText={text => this.handleChange("apellido", text)}
+            value={apellido}
           />
-        )}
-        <Input
-          containerStyle={{ marginTop: 20 }}
-          disabled={true}
-          id="fechaIngreso"
-          inputStyle={styles.input}
-          label="Fecha de ingreso"
-          name="fechaIngreso"
-          value={moment(fechaIngreso).format("DD/MM/YYYY")}
-        />
-        <Button
-          title="Guardar cambios"
-          icon={{
-            type: "font-awesome",
-            name: "sign-in",
-            color: "black"
-          }}
-          buttonStyle={{ backgroundColor: "#18bc9c", width: "100%" }}
-          titleStyle={{ color: "black", fontWeight: "bold" }}
-          loading={isLoading}
-          onPress={() => this.iniciarSesion()}
-        />
-        {isLoading && (
+          <Input
+            containerStyle={{ marginTop: 20 }}
+            disabled={true}
+            id="email"
+            inputStyle={styles.input}
+            label="E-mail"
+            name="email"
+            onChangeText={text => this.handleChange("email", text)}
+            value={email}
+          />
+          <Input
+            containerStyle={{ marginTop: 20 }}
+            disabled={isLoading}
+            id="telefono"
+            inputStyle={styles.input}
+            label="Teléfono"
+            name="telefono"
+            onChangeText={text => this.handleChange("telefono", text)}
+            value={telefono}
+          />
+          <TouchableOpacity onPress={() => this.handleModalFechaNacChange()}>
+            <Input
+              containerStyle={{ marginTop: 20, width: 180 }}
+              disabled={isLoading}
+              id="fechaNac"
+              inputStyle={styles.input}
+              label="Fecha de nacimiento"
+              name="fechaNac"
+              pointerEvents="none"
+              value={moment(fechaNac).format("DD/MM/YYYY")}
+            />
+          </TouchableOpacity>
+          {showModalFechaNac && (
+            <DateTimePickerModal
+              date={fechaNac}
+              isVisible={true}
+              mode="date"
+              onConfirm={date => this.handleConfirmFechaNac(date)}
+              onCancel={() => this.handleModalFechaNacChange()}
+            />
+          )}
+          <Input
+            containerStyle={{ marginTop: 20, width: 180 }}
+            disabled={true}
+            id="fechaIngreso"
+            inputStyle={styles.input}
+            label="Fecha de ingreso"
+            name="fechaIngreso"
+            value={moment(fechaIngreso).format("DD/MM/YYYY")}
+          />
           <View
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              display: "flex",
+              flexDirection: "row",
               justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(52, 52, 52, 0.7)"
+              marginTop: 20
             }}
           >
-            <ActivityIndicator color="#000" />
+            <CheckBox
+              title="M"
+              checked={sexo === "M"}
+              onPress={() => this.handleSexoChange("M")}
+              containerStyle={{
+                backgroundColor: "transparent",
+                borderWidth: 0
+              }}
+              checkedColor="#18bc9c"
+            />
+            <CheckBox
+              title="F"
+              checked={sexo === "F"}
+              onPress={() => this.handleSexoChange("F")}
+              containerStyle={{
+                backgroundColor: "transparent",
+                borderWidth: 0
+              }}
+              checkedColor="#18bc9c"
+            />
           </View>
-        )}
-      </View>
+          <Button
+            icon={{
+              type: "font-awesome",
+              name: "check",
+              color: "black"
+            }}
+            buttonStyle={{
+              alignSelf: "center",
+              backgroundColor: "#18bc9c",
+              marginTop: 20,
+              width: 100
+            }}
+            loading={isLoading}
+            onPress={() => this.handleCambiarDatos()}
+          />
+          {isLoading && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(52, 52, 52, 0.7)"
+              }}
+            >
+              <ActivityIndicator color="#000" />
+            </View>
+          )}
+        </View>
+      </Fragment>
     );
   }
 }
