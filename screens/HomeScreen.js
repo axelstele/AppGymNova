@@ -1,34 +1,38 @@
+// @ vendor
 import React, { Component } from "react";
 import {
   View,
   Text,
-  AsyncStorage,
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  Alert
+  Alert,
 } from "react-native";
-import { Header, ListItem, Icon } from "react-native-elements";
+import { ListItem, Icon } from "react-native-elements";
 import CalendarStrip from "react-native-calendar-strip";
-import moment from "moment";
 import Toast from "react-native-root-toast";
-import axios from "axios";
-import id_empresa from "../constants/Empresa";
-
-import Constants from "expo-constants";
-const { manifest } = Constants;
-const uri = `http://${manifest.debuggerHost.split(":").shift()}:8000`;
+import moment from "moment";
+import esLocale from "moment/locale/es";
+moment.updateLocale("es", esLocale);
+// @ apis
+import client from "../api";
+// @ constants
+import { ID_EMPRESA } from "react-native-dotenv";
+// @ utils
+import getUser from "../utils/getAsyncStorage";
+// @components
+import Header from "../components/Header";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   list: {
     flexDirection: "row",
-    flexWrap: "wrap"
-  }
+    flexWrap: "wrap",
+  },
 });
 
 export default class HomeScreen extends Component {
@@ -39,17 +43,15 @@ export default class HomeScreen extends Component {
       isLoading: false,
       selectedDate: moment(),
       clases: [],
-      selectedClase: -1,
-      id_usuario: -1,
-      clasesMiembro: []
+      id_usuario: null,
+      clasesMiembro: [],
     };
   }
 
   componentDidMount() {
     this.setState({ isLoading: true }, async () => {
-      let id_usuario = await AsyncStorage.getItem("id_usuario");
-      id_usuario = parseInt(id_usuario, 10);
-      this.setState({ id_usuario: id_usuario }, async () => {
+      const id_usuario = await getUser();
+      this.setState({ id_usuario }, async () => {
         await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
         this.setState({ isLoading: false });
       });
@@ -58,31 +60,49 @@ export default class HomeScreen extends Component {
 
   async refreshClases() {
     const { selectedDate } = this.state;
-
     try {
-      const res = await axios.post(uri + "/api/get_clases", {
+      const res = await client.post("/api/get_clases", {
         dia: selectedDate.format("YYYY-MM-DD"),
-        empresa: id_empresa
+        empresa: ID_EMPRESA,
       });
-
       this.setState({ clases: res.data });
     } catch (error) {
-      console.log(error);
+      Toast.show("Ocurrió un error al obtener las clases, intente nuevamente", {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+        shadow: true,
+        animation: true,
+        hideOnPress: true,
+        delay: 0,
+        textColor: "black",
+        backgroundColor: "#18bc9c",
+      });
     }
   }
 
   async refreshClasesMiembro() {
     const { id_usuario } = this.state;
-
     try {
-      const res = await axios.post(uri + "/api/get_clases_miembro", {
-        empresa: id_empresa,
-        id_usuario: id_usuario
+      const res = await client.post("/api/get_clases_miembro", {
+        empresa: ID_EMPRESA,
+        id_usuario: id_usuario,
       });
 
       this.setState({ clasesMiembro: res.data });
     } catch (error) {
-      console.log(error);
+      Toast.show(
+        "Ocurrió un error al obtener las clases del usuario, intente nuevamente",
+        {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c",
+        }
+      );
     }
   }
 
@@ -105,8 +125,8 @@ export default class HomeScreen extends Component {
         { text: "Confirmar", onPress: () => this.adherirClase(clase) },
         {
           text: "Cancel",
-          style: "cancel"
-        }
+          style: "cancel",
+        },
       ],
       { cancelable: false }
     );
@@ -116,26 +136,36 @@ export default class HomeScreen extends Component {
     const { id_usuario } = this.state;
 
     this.setState({ isLoading: true }, async () => {
-      let res = await axios.post(uri + "/api/adherir_clase", {
-        empresa: id_empresa,
-        id_clase: clase.id,
-        id_usuario: id_usuario
-      });
-
-      // Add a Toast on screen.
-      let toast = Toast.show(res.data.message, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-        shadow: true,
-        animation: true,
-        hideOnPress: true,
-        delay: 0,
-        textColor: "black",
-        backgroundColor: "#18bc9c"
-      });
-
-      await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
-      this.setState({ isLoading: false });
+      try {
+        let res = await client.post("/api/adherir_clase", {
+          empresa: ID_EMPRESA,
+          id_clase: clase.id,
+          id_usuario: id_usuario,
+        });
+        Toast.show(res.data.message, {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c",
+        });
+        await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
+        this.setState({ isLoading: false });
+      } catch (error) {
+        Toast.show("Ocurrió un error, intente nuevamente", {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c",
+        });
+      }
     });
   }
 
@@ -150,12 +180,12 @@ export default class HomeScreen extends Component {
       [
         {
           text: "Confirmar",
-          onPress: () => this.confirmarCancelarClase(clase)
+          onPress: () => this.confirmarCancelarClase(clase),
         },
         {
           text: "Cancel",
-          style: "cancel"
-        }
+          style: "cancel",
+        },
       ],
       { cancelable: false }
     );
@@ -165,14 +195,12 @@ export default class HomeScreen extends Component {
     const { id_usuario } = this.state;
 
     this.setState({ isLoading: true }, async () => {
-      let res = await axios.post(uri + "/api/cancelar_clase", {
-        empresa: id_empresa,
+      let res = await client.post("/api/cancelar_clase", {
+        empresa: ID_EMPRESA,
         id_clase: clase.id,
-        id_usuario: id_usuario
+        id_usuario: id_usuario,
       });
-
-      // Add a Toast on screen.
-      let toast = Toast.show(res.data.message, {
+      Toast.show(res.data.message, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
         shadow: true,
@@ -180,7 +208,7 @@ export default class HomeScreen extends Component {
         hideOnPress: true,
         delay: 0,
         textColor: "black",
-        backgroundColor: "#18bc9c"
+        backgroundColor: "#18bc9c",
       });
 
       await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
@@ -189,24 +217,12 @@ export default class HomeScreen extends Component {
   }
 
   render() {
-    const {
-      isLoading,
-      selectedDate,
-      selectedClase,
-      clases,
-      clasesMiembro
-    } = this.state;
-
+    const { isLoading, selectedDate, clases, clasesMiembro } = this.state;
     return (
       <View style={{ flex: 1 }}>
         <Header
-          leftComponent={{
-            icon: "menu",
-            color: "#fff",
-            onPress: () => this.props.navigation.openDrawer()
-          }}
-          centerComponent={{ text: "Clases", style: { color: "#fff" } }}
-          backgroundColor="#212529"
+          onPress={() => this.props.navigation.openDrawer()}
+          text="Clases"
         />
         <CalendarStrip
           selectedDate={selectedDate}
@@ -215,7 +231,7 @@ export default class HomeScreen extends Component {
             type: "border",
             duration: 200,
             borderWidth: 1,
-            borderHighlightColor: "black"
+            borderHighlightColor: "black",
           }}
           calendarHeaderStyle={{ color: "black" }}
           calendarColor={"white"}
@@ -225,7 +241,7 @@ export default class HomeScreen extends Component {
           highlightDateNameStyle={{ color: "black" }}
           disabledDateNameStyle={{ color: "grey" }}
           disabledDateNumberStyle={{ color: "grey" }}
-          onDateSelected={date => this.onChangeDate(date)}
+          onDateSelected={(date) => this.onChangeDate(date)}
           style={{ height: 100, paddingTop: 10, paddingBottom: 10 }}
           refreshing={isLoading}
           locale={{
@@ -241,10 +257,10 @@ export default class HomeScreen extends Component {
                 "_"
               ),
               weekdaysShort: "dom_lun_mar_mie_jue_vie_sab".split("_"),
-              weekdaysMin: "Do_Lu_Ma_Mi_Ju_Vi_Sa".split("_")
-            }
+              weekdaysMin: "Do_Lu_Ma_Mi_Ju_Vi_Sa".split("_"),
+            },
           }}
-          markedDates={clasesMiembro.map(claseMiembro => ({
+          markedDates={clasesMiembro.map((claseMiembro) => ({
             date: moment(claseMiembro.clase_fecha),
             dots: [
               {
@@ -253,9 +269,9 @@ export default class HomeScreen extends Component {
                   moment(claseMiembro.clase_fecha).format("YYYY-MM-DD") <
                   moment().format("YYYY-MM-DD")
                     ? "#f8cdc8"
-                    : "#18bc9c"
-              }
-            ]
+                    : "#18bc9c",
+              },
+            ],
           }))}
         />
         {clases.length == 0 ? (
@@ -266,7 +282,7 @@ export default class HomeScreen extends Component {
           <FlatList
             data={clases}
             extraData={this.state}
-            keyExtractor={item => item.id.toString()}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <ListItem
                 title={item.clase_actividad}
@@ -277,7 +293,7 @@ export default class HomeScreen extends Component {
                 titleStyle={{
                   flex: 1,
                   justifyContent: "center",
-                  fontWeight: "bold"
+                  fontWeight: "bold",
                 }}
                 disabled={
                   item.clase_cupos - item.clase_cupos_actual >=
@@ -289,20 +305,20 @@ export default class HomeScreen extends Component {
                   ).format("YYYY-MM-DD HH:mm") <
                     moment().format("YYYY-MM-DD HH:mm") ||
                   clasesMiembro.some(
-                    claseMiembro => claseMiembro.clase_id == item.id
+                    (claseMiembro) => claseMiembro.clase_id == item.id
                   )
                 }
                 disabledStyle={{
                   backgroundColor:
                     clasesMiembro.some(
-                      claseMiembro => claseMiembro.clase_id == item.id
+                      (claseMiembro) => claseMiembro.clase_id == item.id
                     ) &&
                     moment(
                       item.clase_fecha + " " + item.clase_hora_inicio
                     ).format("YYYY-MM-DD HH:mm") >
                       moment().format("YYYY-MM-DD HH:mm")
                       ? "#18bc9c"
-                      : "grey"
+                      : "grey",
                 }}
                 badge={
                   moment(
@@ -316,13 +332,13 @@ export default class HomeScreen extends Component {
                           "/" +
                           item.clase_cupos,
                         textStyle: { color: "black" },
-                        badgeStyle: { backgroundColor: "white" }
+                        badgeStyle: { backgroundColor: "white" },
                       }
                     : undefined
                 }
                 rightIcon={
                   clasesMiembro.some(
-                    claseMiembro => claseMiembro.clase_id == item.id
+                    (claseMiembro) => claseMiembro.clase_id == item.id
                   ) &&
                   moment(
                     item.clase_fecha + " " + item.clase_hora_inicio
@@ -350,7 +366,7 @@ export default class HomeScreen extends Component {
               bottom: 0,
               justifyContent: "center",
               alignItems: "center",
-              backgroundColor: "rgba(52, 52, 52, 0.7)"
+              backgroundColor: "rgba(52, 52, 52, 0.7)",
             }}
           >
             <ActivityIndicator color="#000" />

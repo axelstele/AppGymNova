@@ -1,33 +1,34 @@
+// @ vendor
 import React, { Component, Fragment } from "react";
 import {
   ActivityIndicator,
   AsyncStorage,
   StyleSheet,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { Header, Input, Button, CheckBox } from "react-native-elements";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import moment from "moment";
 import Toast from "react-native-root-toast";
-import axios from "axios";
-import id_empresa from "../constants/Empresa";
-
-import Constants from "expo-constants";
-const { manifest } = Constants;
-const uri = `http://${manifest.debuggerHost.split(":").shift()}:8000`;
+// @ constants
+import { ID_EMPRESA } from "react-native-dotenv";
+// @ apis
+import client from "../api";
+// @ utils
+import getUser from "../utils/getAsyncStorage";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   bottom: {
     flex: 1,
     justifyContent: "flex-end",
-    marginBottom: 36
-  }
+    marginBottom: 36,
+  },
 });
 
 export default class MisDatosScreen extends Component {
@@ -44,16 +45,15 @@ export default class MisDatosScreen extends Component {
       nombre: "",
       sexo: null,
       showModalFechaNac: false,
-      telefono: ""
+      telefono: "",
     };
   }
 
   componentDidMount() {
     this.setState({ isLoading: true }, async () => {
-      let id_usuario = await AsyncStorage.getItem("id_usuario");
-      id_usuario = parseInt(id_usuario, 10);
+      const id_usuario = await getUser();
       this.setState({ id_usuario }, async () => {
-        await Promise.all([this.refreshDatos()]);
+        await this.refreshDatos();
         this.setState({ isLoading: false });
       });
     });
@@ -61,11 +61,10 @@ export default class MisDatosScreen extends Component {
 
   async refreshDatos() {
     const { id_usuario } = this.state;
-
     try {
-      const res = await axios.post(uri + "/api/get_datos", {
-        empresa: id_empresa,
-        id_usuario: id_usuario
+      const res = await client.post("/api/get_datos", {
+        empresa: ID_EMPRESA,
+        id_usuario: id_usuario,
       });
       this.setState({
         nombre: res.data.nombre,
@@ -74,14 +73,25 @@ export default class MisDatosScreen extends Component {
         telefono: res.data.telefono,
         fechaNac: moment(res.data.fecha_nac, "YYYY-MM-DD").toDate(),
         fechaIngreso: res.data.fecha_ing,
-        email: res.data.email
+        email: res.data.email,
       });
     } catch (error) {
-      console.log(error);
+      this.setState({ isLoading: false }, () => {
+        Toast.show("Ocurrió un error, intente nuevamente", {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c",
+        });
+      });
     }
   }
 
-  handleConfirmFechaNac = fechaNac => {
+  handleConfirmFechaNac = (fechaNac) => {
     this.setState({ fechaNac }, () => this.handleModalFechaNacChange());
   };
 
@@ -90,7 +100,7 @@ export default class MisDatosScreen extends Component {
     this.setState({ showModalFechaNac: !showModalFechaNac });
   };
 
-  handleSexoChange = sexo => {
+  handleSexoChange = (sexo) => {
     this.setState({ sexo });
   };
 
@@ -105,21 +115,21 @@ export default class MisDatosScreen extends Component {
       id_usuario,
       nombre,
       sexo,
-      telefono
+      telefono,
     } = this.state;
 
     this.setState({ isLoading: true }, async () => {
       try {
-        const res = await axios.post(uri + "/api/modificar_datos", {
-          empresa: id_empresa,
+        const res = await client.post("/api/modificar_datos", {
+          empresa: ID_EMPRESA,
           id_usuario: id_usuario,
           apellido: apellido,
           nombre: nombre,
           fecha_nac: fechaNac,
           sexo: sexo,
-          telefono: telefono
+          telefono: telefono,
         });
-        let toast = Toast.show(res.data.message, {
+        Toast.show(res.data.message, {
           duration: Toast.durations.SHORT,
           position: Toast.positions.BOTTOM,
           shadow: true,
@@ -127,12 +137,23 @@ export default class MisDatosScreen extends Component {
           hideOnPress: true,
           delay: 0,
           textColor: "black",
-          backgroundColor: "#18bc9c"
+          backgroundColor: "#18bc9c",
         });
-        await Promise.all([this.refreshDatos()]);
+        await this.refreshDatos();
         this.setState({ isLoading: false });
       } catch (error) {
-        console.log(error);
+        this.setState({ isLoading: false }, () => {
+          Toast.show("Ocurrió un error, intente nuevamente", {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.BOTTOM,
+            shadow: true,
+            animation: true,
+            hideOnPress: true,
+            delay: 0,
+            textColor: "black",
+            backgroundColor: "#18bc9c",
+          });
+        });
       }
     });
   };
@@ -147,7 +168,7 @@ export default class MisDatosScreen extends Component {
       nombre,
       sexo,
       showModalFechaNac,
-      telefono
+      telefono,
     } = this.state;
 
     return (
@@ -156,7 +177,7 @@ export default class MisDatosScreen extends Component {
           leftComponent={{
             icon: "menu",
             color: "#fff",
-            onPress: () => this.props.navigation.openDrawer()
+            onPress: () => this.props.navigation.openDrawer(),
           }}
           centerComponent={{ text: "Mis datos", style: { color: "#fff" } }}
           backgroundColor="#212529"
@@ -169,7 +190,7 @@ export default class MisDatosScreen extends Component {
             inputStyle={styles.input}
             label="Nombre"
             name="nombre"
-            onChangeText={text => this.handleChange("nombre", text)}
+            onChangeText={(text) => this.handleChange("nombre", text)}
             value={nombre}
           />
           <Input
@@ -179,7 +200,7 @@ export default class MisDatosScreen extends Component {
             inputStyle={styles.input}
             label="Apellido"
             name="apellido"
-            onChangeText={text => this.handleChange("apellido", text)}
+            onChangeText={(text) => this.handleChange("apellido", text)}
             value={apellido}
           />
           <Input
@@ -189,7 +210,7 @@ export default class MisDatosScreen extends Component {
             inputStyle={styles.input}
             label="E-mail"
             name="email"
-            onChangeText={text => this.handleChange("email", text)}
+            onChangeText={(text) => this.handleChange("email", text)}
             value={email}
           />
           <Input
@@ -199,7 +220,7 @@ export default class MisDatosScreen extends Component {
             inputStyle={styles.input}
             label="Teléfono"
             name="telefono"
-            onChangeText={text => this.handleChange("telefono", text)}
+            onChangeText={(text) => this.handleChange("telefono", text)}
             value={telefono}
           />
           <TouchableOpacity onPress={() => this.handleModalFechaNacChange()}>
@@ -219,7 +240,7 @@ export default class MisDatosScreen extends Component {
               date={fechaNac}
               isVisible={true}
               mode="date"
-              onConfirm={date => this.handleConfirmFechaNac(date)}
+              onConfirm={(date) => this.handleConfirmFechaNac(date)}
               onCancel={() => this.handleModalFechaNacChange()}
             />
           )}
@@ -237,7 +258,7 @@ export default class MisDatosScreen extends Component {
               display: "flex",
               flexDirection: "row",
               justifyContent: "center",
-              marginTop: 20
+              marginTop: 20,
             }}
           >
             <CheckBox
@@ -246,7 +267,7 @@ export default class MisDatosScreen extends Component {
               onPress={() => this.handleSexoChange("M")}
               containerStyle={{
                 backgroundColor: "transparent",
-                borderWidth: 0
+                borderWidth: 0,
               }}
               checkedColor="#18bc9c"
             />
@@ -256,7 +277,7 @@ export default class MisDatosScreen extends Component {
               onPress={() => this.handleSexoChange("F")}
               containerStyle={{
                 backgroundColor: "transparent",
-                borderWidth: 0
+                borderWidth: 0,
               }}
               checkedColor="#18bc9c"
             />
@@ -265,13 +286,13 @@ export default class MisDatosScreen extends Component {
             icon={{
               type: "font-awesome",
               name: "check",
-              color: "black"
+              color: "black",
             }}
             buttonStyle={{
               alignSelf: "center",
               backgroundColor: "#18bc9c",
               marginTop: 20,
-              width: 100
+              width: 100,
             }}
             loading={isLoading}
             onPress={() => this.handleCambiarDatos()}
@@ -286,7 +307,7 @@ export default class MisDatosScreen extends Component {
                 bottom: 0,
                 justifyContent: "center",
                 alignItems: "center",
-                backgroundColor: "rgba(52, 52, 52, 0.7)"
+                backgroundColor: "rgba(52, 52, 52, 0.7)",
               }}
             >
               <ActivityIndicator color="#000" />

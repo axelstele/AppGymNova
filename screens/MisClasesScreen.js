@@ -1,31 +1,34 @@
-import React, { Component } from "react";
+// @ vendor
+import React, { Component, Fragment } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
   AsyncStorage,
-  StyleSheet,
   FlatList,
-  ActivityIndicator
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { Header, Card } from "react-native-elements";
+import { Button, Card, Header, Input } from "react-native-elements";
 import moment from "moment";
+import StarRating from "react-native-star-rating";
 import Toast from "react-native-root-toast";
-import axios from "axios";
-import id_empresa from "../constants/Empresa";
-import Constants from "expo-constants";
-const { manifest } = Constants;
-const uri = `http://${manifest.debuggerHost.split(":").shift()}:8000`;
+// @ constants
+import { ID_EMPRESA } from "react-native-dotenv";
+// @ apis
+import client from "../api";
+// @ utils
+import getUser from "../utils/getAsyncStorage";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   list: {
     flexDirection: "row",
-    flexWrap: "wrap"
-  }
+    flexWrap: "wrap",
+  },
 });
 
 export default class MisClasesScreen extends Component {
@@ -35,16 +38,16 @@ export default class MisClasesScreen extends Component {
     this.state = {
       isLoading: false,
       clasesMiembro: [],
-      id_usuario: -1
+      id_usuario: -1,
+      selectedRating: null,
     };
   }
 
   componentDidMount() {
     this.setState({ isLoading: true }, async () => {
-      let id_usuario = await AsyncStorage.getItem("id_usuario");
-      id_usuario = parseInt(id_usuario, 10);
+      const id_usuario = await getUser();
       this.setState({ id_usuario }, async () => {
-        await Promise.all([this.refreshClasesMiembro()]);
+        await this.refreshClasesMiembro();
         this.setState({ isLoading: false });
       });
     });
@@ -52,16 +55,14 @@ export default class MisClasesScreen extends Component {
 
   async refreshClasesMiembro() {
     const { id_usuario } = this.state;
-
     try {
-      const res = await axios.post(uri + "/api/get_clases_miembro", {
-        empresa: id_empresa,
-        id_usuario: id_usuario
+      const res = await client.post("/api/get_clases_miembro", {
+        empresa: ID_EMPRESA,
+        id_usuario: id_usuario,
       });
 
       this.setState({ clasesMiembro: res.data });
     } catch (error) {
-      console.log(error);
       Toast.show("Error de servidor, intente nuevamente", {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
@@ -70,10 +71,63 @@ export default class MisClasesScreen extends Component {
         hideOnPress: true,
         delay: 0,
         textColor: "black",
-        backgroundColor: "#18bc9c"
+        backgroundColor: "#18bc9c",
       });
     }
   }
+
+  handleChange = (item, text) => {
+    const { clasesMiembro } = this.state;
+    let index = clasesMiembro.findIndex((clase) => clase.id === item.id);
+    clasesMiembro[index].cal_comentario = text;
+    this.setState({ clasesMiembro });
+  };
+
+  handleRatingClick = (rate, item) => {
+    const { clasesMiembro } = this.state;
+    let index = clasesMiembro.findIndex((clase) => clase.id === item.id);
+    clasesMiembro[index].cal_valor = rate;
+    this.setState({ clasesMiembro });
+  };
+
+  handleCalificarClick = (clase) => {
+    const { id_usuario } = this.state;
+    this.setState({ isLoading: true }, async () => {
+      try {
+        const res = await client.post("/api/calificar_clase", {
+          empresa: ID_EMPRESA,
+          id_usuario: id_usuario,
+          id_clase: clase.id,
+          puntaje: clase.cal_valor,
+          comentario: clase.cal_comentario,
+        });
+        Toast.show(res.data.message, {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c",
+        });
+        await this.refreshClasesMiembro();
+        this.setState({ isLoading: false });
+      } catch (error) {
+        Toast.show("Error de servidor, intente nuevamente", {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c",
+        });
+        this.setState({ isLoading: false });
+      }
+    });
+  };
 
   render() {
     const { isLoading, clasesMiembro } = this.state;
@@ -84,7 +138,7 @@ export default class MisClasesScreen extends Component {
           leftComponent={{
             icon: "menu",
             color: "#fff",
-            onPress: () => this.props.navigation.openDrawer()
+            onPress: () => this.props.navigation.openDrawer(),
           }}
           centerComponent={{ text: "Mis clases", style: { color: "#fff" } }}
           backgroundColor="#212529"
@@ -97,7 +151,7 @@ export default class MisClasesScreen extends Component {
           <FlatList
             data={clasesMiembro}
             extraData={this.state}
-            keyExtractor={item => item.id.toString()}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <Card
                 title={item.clase_actividad}
@@ -116,7 +170,7 @@ export default class MisClasesScreen extends Component {
                     moment().format("YYYY-MM-DD HH:mm")
                       ? 2
                       : 0,
-                  borderColor: "black"
+                  borderColor: "black",
                 }}
                 titleStyle={{
                   backgroundColor:
@@ -126,7 +180,7 @@ export default class MisClasesScreen extends Component {
                     moment().format("YYYY-MM-DD HH:mm")
                       ? "#18bc9c"
                       : "#f8cdc8",
-                  color: "black"
+                  color: "black",
                 }}
               >
                 <Text>
@@ -139,6 +193,53 @@ export default class MisClasesScreen extends Component {
                   <Text style={{ fontWeight: "bold" }}>Hora inicio:</Text>
                   <Text>{" " + item.clase_hora_inicio}</Text>
                 </Text>
+                <View style={{ display: "flex", flexDirection: "row" }}>
+                  <Text style={{ fontWeight: "bold" }}>
+                    {moment(item.clase_fecha).format("YYYY-MM-DD") <
+                    moment().subtract(7, "days").format("YYYY-MM-DD")
+                      ? "Mi calificación: "
+                      : "Calificar: "}
+                  </Text>
+                  <StarRating
+                    activeOpacity={1}
+                    disabled={
+                      moment(item.clase_fecha).format("YYYY-MM-DD") <
+                      moment().subtract(7, "days").format("YYYY-MM-DD")
+                    }
+                    emptyStarColor={
+                      moment(item.clase_fecha).format("YYYY-MM-DD") <
+                      moment().subtract(7, "days").format("YYYY-MM-DD")
+                        ? "grey"
+                        : "black"
+                    }
+                    fullStarColor={
+                      moment(item.clase_fecha).format("YYYY-MM-DD") <
+                      moment().subtract(7, "days").format("YYYY-MM-DD")
+                        ? "grey"
+                        : "black"
+                    }
+                    rating={item.cal_valor}
+                    selectedStar={(rating) =>
+                      this.handleRatingClick(rating, item)
+                    }
+                    starSize={24}
+                  />
+                </View>
+                {moment(item.clase_fecha).format("YYYY-MM-DD") >=
+                  moment().subtract(7, "days").format("YYYY-MM-DD") && (
+                  <Fragment>
+                    <Input
+                      onChangeText={(text) => this.handleChange(item, text)}
+                      placeholder="Comentario"
+                      value={item.cal_comentario}
+                    />
+                    <Button
+                      loading={isLoading}
+                      onPress={() => this.handleCalificarClick(item)}
+                      title="Calificar"
+                    />
+                  </Fragment>
+                )}
               </Card>
             )}
           />
@@ -153,7 +254,7 @@ export default class MisClasesScreen extends Component {
               bottom: 0,
               justifyContent: "center",
               alignItems: "center",
-              backgroundColor: "rgba(52, 52, 52, 0.7)"
+              backgroundColor: "rgba(52, 52, 52, 0.7)",
             }}
           >
             <ActivityIndicator color="#000" />

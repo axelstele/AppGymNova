@@ -1,3 +1,4 @@
+// @ vendor
 import React, { Component } from "react";
 import {
   View,
@@ -5,27 +6,28 @@ import {
   AsyncStorage,
   StyleSheet,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import { Header, Card } from "react-native-elements";
 import moment from "moment";
 import Toast from "react-native-root-toast";
-import axios from "axios";
-import id_empresa from "../constants/Empresa";
-import Constants from "expo-constants";
-const { manifest } = Constants;
-const uri = `http://${manifest.debuggerHost.split(":").shift()}:8000`;
+// @ constants
+import { ID_EMPRESA } from "react-native-dotenv";
+// @ apis
+import client from "../api";
+// @ utils
+import getUser from "../utils/getAsyncStorage";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   list: {
     flexDirection: "row",
-    flexWrap: "wrap"
-  }
+    flexWrap: "wrap",
+  },
 });
 
 export default class MisPagosScreen extends Component {
@@ -35,16 +37,15 @@ export default class MisPagosScreen extends Component {
     this.state = {
       isLoading: false,
       pagos: [],
-      id_usuario: -1
+      id_usuario: -1,
     };
   }
 
   componentDidMount() {
     this.setState({ isLoading: true }, async () => {
-      let id_usuario = await AsyncStorage.getItem("id_usuario");
-      id_usuario = parseInt(id_usuario, 10);
-      this.setState({ id_usuario: id_usuario }, async () => {
-        await Promise.all([this.refreshPagos()]);
+      const id_usuario = await getUser();
+      this.setState({ id_usuario }, async () => {
+        await this.refreshPagos();
         this.setState({ isLoading: false });
       });
     });
@@ -52,18 +53,25 @@ export default class MisPagosScreen extends Component {
 
   async refreshPagos() {
     const { id_usuario } = this.state;
-
     try {
-      const res = await axios.post(uri + "/api/get_pagos", {
-        empresa: id_empresa,
-        id_usuario: id_usuario
+      const res = await client.post("/api/get_pagos", {
+        empresa: ID_EMPRESA,
+        id_usuario: id_usuario,
       });
-
-      console.log(res);
-
       this.setState({ pagos: res.data });
     } catch (error) {
-      console.log(error);
+      this.setState({ isLoading: false }, () => {
+        Toast.show("Ocurrió un error, intente nuevamente", {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+          textColor: "black",
+          backgroundColor: "#18bc9c",
+        });
+      });
     }
   }
 
@@ -76,7 +84,7 @@ export default class MisPagosScreen extends Component {
           leftComponent={{
             icon: "menu",
             color: "#fff",
-            onPress: () => this.props.navigation.openDrawer()
+            onPress: () => this.props.navigation.openDrawer(),
           }}
           centerComponent={{ text: "Mis pagos", style: { color: "#fff" } }}
           backgroundColor="#212529"
@@ -89,7 +97,7 @@ export default class MisPagosScreen extends Component {
           <FlatList
             data={pagos}
             extraData={this.state}
-            keyExtractor={item => item.id.toString()}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={({ item, index }) => (
               <Card
                 title={
@@ -101,7 +109,7 @@ export default class MisPagosScreen extends Component {
                 containerStyle={{
                   backgroundColor: index == 0 ? "#edf0f3" : "white",
                   borderWidth: index == 0 ? 2 : 0,
-                  borderColor: "black"
+                  borderColor: "black",
                 }}
                 titleStyle={{
                   backgroundColor:
@@ -109,7 +117,7 @@ export default class MisPagosScreen extends Component {
                     moment().format("YYYY-MM-DD")
                       ? "#18bc9c"
                       : "#f8cdc8",
-                  color: "black"
+                  color: "black",
                 }}
               >
                 <Text>
@@ -158,7 +166,7 @@ export default class MisPagosScreen extends Component {
               bottom: 0,
               justifyContent: "center",
               alignItems: "center",
-              backgroundColor: "rgba(52, 52, 52, 0.7)"
+              backgroundColor: "rgba(52, 52, 52, 0.7)",
             }}
           >
             <ActivityIndicator color="#000" />

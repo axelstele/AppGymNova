@@ -1,19 +1,23 @@
-import { AppLoading } from 'expo';
-import { Asset } from 'expo-asset';
-import * as Font from 'expo-font';
-import React, { useState } from 'react';
-import { Platform, StatusBar, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-import AppNavigator from './navigation/AppNavigator';
+// @ vendor
+import { AppLoading } from "expo";
+import React, { useState } from "react";
+import { Platform, StatusBar, StyleSheet, View } from "react-native";
+import { ThemeProvider } from "react-native-elements";
+// @ apis
+import client from "./api";
+// @ constants
+import { ID_EMPRESA } from "react-native-dotenv";
+// @ components
+import AppNavigator from "./navigation/AppNavigator";
 
 export default function App(props) {
   const [isLoadingComplete, setLoadingComplete] = useState(false);
+  const [theme, setTheme] = useState({});
 
   if (!isLoadingComplete && !props.skipLoadingScreen) {
     return (
       <AppLoading
-        startAsync={loadResourcesAsync}
+        startAsync={() => loadResourcesAsync(setTheme)}
         onError={handleLoadingError}
         onFinish={() => handleFinishLoading(setLoadingComplete)}
       />
@@ -21,27 +25,56 @@ export default function App(props) {
   } else {
     return (
       <View style={styles.container}>
-        {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
-        <AppNavigator />
+        {Platform.OS === "ios" && <StatusBar barStyle="default" />}
+        <ThemeProvider theme={theme}>
+          <AppNavigator />
+        </ThemeProvider>
       </View>
     );
   }
 }
 
-async function loadResourcesAsync() {
-  await Promise.all([
-    Asset.loadAsync([
-      require('./assets/images/robot-dev.png'),
-      require('./assets/images/robot-prod.png'),
-    ]),
-    Font.loadAsync({
-      // This is the font that we are using for our tab bar
-      ...Ionicons.font,
-      // We include SpaceMono because we use it in HomeScreen.js. Feel free to
-      // remove this if you are not using it in your app
-      'space-mono': require('./assets/fonts/SpaceMono-Regular.ttf'),
-    }),
-  ]);
+async function loadResourcesAsync(setTheme) {
+  const res = await client.get(`/api/get_app_settings/${ID_EMPRESA}`);
+  const primary = res.data[1].valor_string;
+  const secondary = res.data[2].valor_string;
+  const tertiary = res.data[0].valor_string;
+  setTheme({
+    colors: {
+      primary: primary,
+      secondary: secondary,
+    },
+    Button: {
+      buttonStyle: {
+        backgroundColor: primary,
+      },
+      icon: {
+        color: tertiary,
+      },
+      titleStyle: {
+        color: tertiary,
+      },
+    },
+    Header: {
+      backgroundColor: primary,
+      centerComponent: {
+        style: {
+          color: tertiary,
+        },
+      },
+      leftComponent: {
+        color: secondary,
+      },
+    },
+    Input: {
+      inputStyle: {
+        color: secondary,
+      },
+      leftIcon: {
+        color: primary,
+      },
+    },
+  });
 }
 
 function handleLoadingError(error) {
@@ -57,6 +90,6 @@ function handleFinishLoading(setLoadingComplete) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
 });
