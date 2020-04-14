@@ -2,13 +2,12 @@
 import React, { Component, Fragment } from "react";
 import {
   ActivityIndicator,
-  AsyncStorage,
   FlatList,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Button, Card, Header, Input } from "react-native-elements";
+import { Button, Card, Input, withTheme } from "react-native-elements";
 import moment from "moment";
 import StarRating from "react-native-star-rating";
 import Toast from "react-native-root-toast";
@@ -18,6 +17,8 @@ import { ID_EMPRESA } from "react-native-dotenv";
 import client from "../api";
 // @ utils
 import getUser from "../utils/getAsyncStorage";
+// @ components
+import CustomHeader from "../components/CustomHeader";
 
 const styles = StyleSheet.create({
   container: {
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default class MisClasesScreen extends Component {
+class MisClasesScreen extends Component {
   constructor(props) {
     super(props);
 
@@ -134,14 +135,9 @@ export default class MisClasesScreen extends Component {
 
     return (
       <View style={{ flex: 1 }}>
-        <Header
-          leftComponent={{
-            icon: "menu",
-            color: "#fff",
-            onPress: () => this.props.navigation.openDrawer(),
-          }}
-          centerComponent={{ text: "Mis clases", style: { color: "#fff" } }}
-          backgroundColor="#212529"
+        <CustomHeader
+          onPress={() => this.props.navigation.openDrawer()}
+          text="Mis Clases"
         />
         {clasesMiembro.length == 0 ? (
           <Text h3 style={{ textAlign: "center" }}>
@@ -264,3 +260,5 @@ export default class MisClasesScreen extends Component {
     );
   }
 }
+
+export default withTheme(MisClasesScreen);

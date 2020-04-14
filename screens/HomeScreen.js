@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { ListItem, Icon } from "react-native-elements";
+import { Icon, ListItem, withTheme } from "react-native-elements";
 import CalendarStrip from "react-native-calendar-strip";
 import Toast from "react-native-root-toast";
 import moment from "moment";
@@ -20,8 +20,9 @@ import client from "../api";
 import { ID_EMPRESA } from "react-native-dotenv";
 // @ utils
 import getUser from "../utils/getAsyncStorage";
+import toastConfig from "../utils/getToastConfig";
 // @components
-import Header from "../components/Header";
+import CustomHeader from "../components/CustomHeader";
 
 const styles = StyleSheet.create({
   container: {
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default class HomeScreen extends Component {
+class HomeScreen extends Component {
   constructor(props) {
     super(props);
 
@@ -106,12 +107,12 @@ export default class HomeScreen extends Component {
     }
   }
 
-  onChangeDate(selectedDate) {
+  onChangeDate = (selectedDate) => {
     this.setState({ isLoading: true, selectedDate }, async () => {
       await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
       this.setState({ isLoading: false });
     });
-  }
+  };
 
   onPressActividad(clase) {
     Alert.alert(
@@ -142,28 +143,15 @@ export default class HomeScreen extends Component {
           id_clase: clase.id,
           id_usuario: id_usuario,
         });
-        Toast.show(res.data.message, {
-          duration: Toast.durations.SHORT,
-          position: Toast.positions.BOTTOM,
-          shadow: true,
-          animation: true,
-          hideOnPress: true,
-          delay: 0,
-          textColor: "black",
-          backgroundColor: "#18bc9c",
-        });
+        Toast.show(res.data.message, toastConfig("success"));
         await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
         this.setState({ isLoading: false });
       } catch (error) {
-        Toast.show("Ocurrió un error, intente nuevamente", {
-          duration: Toast.durations.SHORT,
-          position: Toast.positions.BOTTOM,
-          shadow: true,
-          animation: true,
-          hideOnPress: true,
-          delay: 0,
-          textColor: "black",
-          backgroundColor: "#18bc9c",
+        this.setState({ isLoading: false }, () => {
+          Toast.show(
+            "Ocurrió un error, intente nuevamente",
+            toastConfig("error")
+          );
         });
       }
     });
@@ -193,34 +181,33 @@ export default class HomeScreen extends Component {
 
   confirmarCancelarClase(clase) {
     const { id_usuario } = this.state;
-
     this.setState({ isLoading: true }, async () => {
-      let res = await client.post("/api/cancelar_clase", {
-        empresa: ID_EMPRESA,
-        id_clase: clase.id,
-        id_usuario: id_usuario,
-      });
-      Toast.show(res.data.message, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-        shadow: true,
-        animation: true,
-        hideOnPress: true,
-        delay: 0,
-        textColor: "black",
-        backgroundColor: "#18bc9c",
-      });
-
-      await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
-      this.setState({ isLoading: false });
+      try {
+        let res = await client.post("/api/cancelar_clase", {
+          empresa: ID_EMPRESA,
+          id_clase: clase.id,
+          id_usuario: id_usuario,
+        });
+        Toast.show(res.data.message, toastConfig("success"));
+        await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
+        this.setState({ isLoading: false });
+      } catch (error) {
+        this.setState({ isLoading: false }, () => {
+          Toast.show(
+            "Ocurrió un error, intente nuevamente",
+            toastConfig("error")
+          );
+        });
+      }
     });
   }
 
   render() {
+    const { theme } = this.props;
     const { isLoading, selectedDate, clases, clasesMiembro } = this.state;
     return (
       <View style={{ flex: 1 }}>
-        <Header
+        <CustomHeader
           onPress={() => this.props.navigation.openDrawer()}
           text="Clases"
         />
@@ -230,19 +217,19 @@ export default class HomeScreen extends Component {
           daySelectionAnimation={{
             type: "border",
             duration: 200,
-            borderWidth: 1,
-            borderHighlightColor: "black",
+            borderWidth: 2,
+            borderHighlightColor: theme.colors.primary,
           }}
-          calendarHeaderStyle={{ color: "black" }}
-          calendarColor={"white"}
-          dateNumberStyle={{ color: "black" }}
-          dateNameStyle={{ color: "black" }}
-          highlightDateNumberStyle={{ color: "black" }}
-          highlightDateNameStyle={{ color: "black" }}
-          disabledDateNameStyle={{ color: "grey" }}
-          disabledDateNumberStyle={{ color: "grey" }}
-          onDateSelected={(date) => this.onChangeDate(date)}
-          style={{ height: 100, paddingTop: 10, paddingBottom: 10 }}
+          calendarHeaderStyle={{ color: theme.colors.secondary }}
+          calendarColor="white"
+          dateNumberStyle={{ color: theme.colors.secondary }}
+          dateNameStyle={{ color: theme.colors.primary }}
+          highlightDateNumberStyle={{ color: theme.colors.primary }}
+          highlightDateNameStyle={{ color: theme.colors.primary }}
+          disabledDateNameStyle={{ color: "#CCCCCC" }}
+          disabledDateNumberStyle={{ color: "#CCCCCC" }}
+          onDateSelected={this.onChangeDate}
+          style={{ height: 150, paddingBottom: 10, paddingTop: 10, width: "100%" }}
           refreshing={isLoading}
           locale={{
             name: "es",
@@ -376,3 +363,5 @@ export default class HomeScreen extends Component {
     );
   }
 }
+
+export default withTheme(HomeScreen);

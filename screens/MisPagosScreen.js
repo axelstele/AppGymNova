@@ -3,12 +3,11 @@ import React, { Component } from "react";
 import {
   View,
   Text,
-  AsyncStorage,
   StyleSheet,
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { Header, Card } from "react-native-elements";
+import { Card, withTheme } from "react-native-elements";
 import moment from "moment";
 import Toast from "react-native-root-toast";
 // @ constants
@@ -17,6 +16,8 @@ import { ID_EMPRESA } from "react-native-dotenv";
 import client from "../api";
 // @ utils
 import getUser from "../utils/getAsyncStorage";
+// @ components
+import CustomHeader from "../components/CustomHeader";
 
 const styles = StyleSheet.create({
   container: {
@@ -30,7 +31,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default class MisPagosScreen extends Component {
+class MisPagosScreen extends Component {
   constructor(props) {
     super(props);
 
@@ -80,14 +81,9 @@ export default class MisPagosScreen extends Component {
 
     return (
       <View style={{ flex: 1 }}>
-        <Header
-          leftComponent={{
-            icon: "menu",
-            color: "#fff",
-            onPress: () => this.props.navigation.openDrawer(),
-          }}
-          centerComponent={{ text: "Mis pagos", style: { color: "#fff" } }}
-          backgroundColor="#212529"
+        <CustomHeader
+          onPress={() => this.props.navigation.openDrawer()}
+          text="Mis Pagos"
         />
         {pagos.length == 0 ? (
           <Text h3 style={{ textAlign: "center" }}>
@@ -176,3 +172,5 @@ export default class MisPagosScreen extends Component {
     );
   }
 }
+
+export default withTheme(MisPagosScreen);

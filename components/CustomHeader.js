@@ -6,7 +6,7 @@ const customHeader = ({ text, onPress }) => (
   <Header
     centerComponent={{
       text: text,
-      style: { fontSize: 26, fontWeight: "bold" },
+      style: { fontFamily: "roboto-bold", fontSize: 26, fontWeight: "bold" },
     }}
     containerStyle={{
       height: 70,

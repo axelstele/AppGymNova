@@ -2,12 +2,11 @@
 import React, { Component, Fragment } from "react";
 import {
   ActivityIndicator,
-  AsyncStorage,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Header, Input, Button, CheckBox } from "react-native-elements";
+import { Button, CheckBox, Input, withTheme } from "react-native-elements";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import moment from "moment";
 import Toast from "react-native-root-toast";
@@ -17,6 +16,8 @@ import { ID_EMPRESA } from "react-native-dotenv";
 import client from "../api";
 // @ utils
 import getUser from "../utils/getAsyncStorage";
+// @ components
+import CustomHeader from "../components/CustomHeader";
 
 const styles = StyleSheet.create({
   container: {
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default class MisDatosScreen extends Component {
+class MisDatosScreen extends Component {
   constructor(props) {
     super(props);
 
@@ -173,14 +174,9 @@ export default class MisDatosScreen extends Component {
 
     return (
       <Fragment>
-        <Header
-          leftComponent={{
-            icon: "menu",
-            color: "#fff",
-            onPress: () => this.props.navigation.openDrawer(),
-          }}
-          centerComponent={{ text: "Mis datos", style: { color: "#fff" } }}
-          backgroundColor="#212529"
+        <CustomHeader
+          onPress={() => this.props.navigation.openDrawer()}
+          text="Mis Datos"
         />
         <View style={{ padding: 20 }}>
           <Input
@@ -318,3 +314,5 @@ export default class MisDatosScreen extends Component {
     );
   }
 }
+
+export default withTheme(MisDatosScreen);

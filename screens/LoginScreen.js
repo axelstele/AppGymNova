@@ -113,6 +113,7 @@ class LoginScreen extends Component {
 
   render() {
     const { theme } = this.props;
+    console.log(theme);
     const { email, password, isLoading, checked } = this.state;
     return (
       <View style={styles.container}>

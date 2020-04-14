@@ -1,6 +1,7 @@
 // @ vendor
-import { AppLoading } from "expo";
 import React, { useState } from "react";
+import * as Font from "expo-font";
+import { AppLoading } from "expo";
 import { Platform, StatusBar, StyleSheet, View } from "react-native";
 import { ThemeProvider } from "react-native-elements";
 // @ apis
@@ -9,6 +10,14 @@ import client from "./api";
 import { ID_EMPRESA } from "react-native-dotenv";
 // @ components
 import AppNavigator from "./navigation/AppNavigator";
+
+const fetchFonts = () => {
+  return Font.loadAsync({
+    "roboto-bold": require("./assets/fonts/Roboto-Bold.ttf"),
+    "roboto-italic": require("./assets/fonts/Roboto-Italic.ttf"),
+    "roboto-regular": require("./assets/fonts/Roboto-Regular.ttf"),
+  });
+};
 
 export default function App(props) {
   const [isLoadingComplete, setLoadingComplete] = useState(false);
@@ -35,6 +44,7 @@ export default function App(props) {
 }
 
 async function loadResourcesAsync(setTheme) {
+  await fetchFonts();
   const res = await client.get(`/api/get_app_settings/${ID_EMPRESA}`);
   const primary = res.data[1].valor_string;
   const secondary = res.data[2].valor_string;
@@ -53,6 +63,7 @@ async function loadResourcesAsync(setTheme) {
       },
       titleStyle: {
         color: tertiary,
+        fontFamily: "roboto-regular"
       },
     },
     Header: {
