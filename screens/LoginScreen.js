@@ -1,6 +1,6 @@
 // @ vendor
 import React, { Component } from "react";
-import { AsyncStorage, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
   Input,
   Button,
@@ -9,8 +9,11 @@ import {
   withTheme,
 } from "react-native-elements";
 import Toast from "react-native-root-toast";
+import * as SecureStore from "expo-secure-store";
 // @ apis
 import client from "../api";
+// @ utils
+import registerUsersAppToken from "../utils/registerUsersAppToken";
 
 const styles = StyleSheet.create({
   container: {
@@ -65,12 +68,11 @@ class LoginScreen extends Component {
 
         if (res.data.logged) {
           if (checked) {
-            await AsyncStorage.setItem("isLogged", "1");
+            await SecureStore.setItemAsync("isLogged", "1");
           }
-          await AsyncStorage.setItem(
-            "id_usuario",
-            res.data.id_usuario.toString()
-          );
+          const id_usuario = res.data.id_usuario.toString();
+          await SecureStore.setItemAsync("id_usuario", id_usuario);
+          await registerUsersAppToken(id_usuario);
           this.setState({ isLoading: false }, () => {
             this.props.navigation.navigate("App");
           });
@@ -113,7 +115,6 @@ class LoginScreen extends Component {
 
   render() {
     const { theme } = this.props;
-    console.log(theme);
     const { email, password, isLoading, checked } = this.state;
     return (
       <View style={styles.container}>

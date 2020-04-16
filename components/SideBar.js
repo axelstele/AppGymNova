@@ -1,12 +1,7 @@
 import React, { Component } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  AsyncStorage,
-  Alert,
-} from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Icon, Text, Button, Image } from "react-native-elements";
+import * as SecureStore from "expo-secure-store";
 
 const styles = StyleSheet.create({
   sideMenuContainer: {
@@ -85,8 +80,8 @@ export default class SideBar extends Component {
 
   cerrarSesion() {
     this.setState({ isLoading: true }, async () => {
-      await AsyncStorage.removeItem("isLogged");
-      await AsyncStorage.removeItem("id_usuario");
+      await SecureStore.deleteItemAsync("isLogged");
+      await SecureStore.deleteItemAsync("id_usuario");
       this.setState({ isLoading: false }, () => {
         this.props.navigation.navigate("Auth");
       });

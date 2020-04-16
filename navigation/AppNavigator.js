@@ -6,13 +6,8 @@ import {
   createStackNavigator,
   createDrawerNavigator,
 } from "react-navigation";
-import {
-  ActivityIndicator,
-  AsyncStorage,
-  StatusBar,
-  StyleSheet,
-  View,
-} from "react-native";
+import { ActivityIndicator, StatusBar, StyleSheet, View } from "react-native";
+import * as SecureStore from "expo-secure-store";
 // @ components
 import HomeScreen from "../screens/HomeScreen";
 import MisPagosScreen from "../screens/MisPagosScreen";
@@ -20,6 +15,9 @@ import MisClasesScreen from "../screens/MisClasesScreen";
 import LoginScreen from "../screens/LoginScreen";
 import MisDatosScreen from "../screens/MisDatosScreen";
 import SideBar from "../components/SideBar";
+// @ utils
+import getUser from "../utils/getAsyncStorage";
+import registerUsersAppToken from "../utils/registerUsersAppToken";
 
 const styles = StyleSheet.create({
   container: {
@@ -37,7 +35,12 @@ class AuthLoadingScreen extends Component {
 
   // Fetch the token from storage then navigate to our appropriate place
   _bootstrapAsync = async () => {
-    const isLogged = await AsyncStorage.getItem("isLogged");
+    const isLogged = await SecureStore.getItemAsync("isLogged");
+
+    if (isLogged) {
+      const id_usuario = await getUser();
+      await registerUsersAppToken(id_usuario);
+    }
 
     // This will switch to the App screen or Auth screen and this loading
     // screen will be unmounted and thrown away.

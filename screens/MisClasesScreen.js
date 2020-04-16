@@ -3,6 +3,7 @@ import React, { Component, Fragment } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -38,6 +39,7 @@ class MisClasesScreen extends Component {
 
     this.state = {
       isLoading: false,
+      isLoadingRefreshControl: false,
       clasesMiembro: [],
       id_usuario: -1,
       selectedRating: null,
@@ -130,9 +132,15 @@ class MisClasesScreen extends Component {
     });
   };
 
-  render() {
-    const { isLoading, clasesMiembro } = this.state;
+  handleRefreshControl = () => {
+    this.setState({ isLoadingRefreshControl: true }, async () => {
+      await this.refreshClasesMiembro();
+      this.setState({ isLoadingRefreshControl: false });
+    });
+  };
 
+  render() {
+    const { isLoading, isLoadingRefreshControl, clasesMiembro } = this.state;
     return (
       <View style={{ flex: 1 }}>
         <CustomHeader
@@ -238,6 +246,13 @@ class MisClasesScreen extends Component {
                 )}
               </Card>
             )}
+            refreshControl={
+              <RefreshControl
+                colors={["#9Bd35A", "#689F38"]}
+                refreshing={isLoadingRefreshControl}
+                onRefresh={this.handleRefreshControl}
+              />
+            }
           />
         )}
         {isLoading && (

@@ -1,11 +1,12 @@
 // @ vendor
 import React, { Component } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
   ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { Card, withTheme } from "react-native-elements";
 import moment from "moment";
@@ -36,9 +37,10 @@ class MisPagosScreen extends Component {
     super(props);
 
     this.state = {
+      id_usuario: null,
       isLoading: false,
+      isLoadingRefreshControl: false,
       pagos: [],
-      id_usuario: -1,
     };
   }
 
@@ -76,8 +78,15 @@ class MisPagosScreen extends Component {
     }
   }
 
+  handleRefreshControl = () => {
+    this.setState({ isLoadingRefreshControl: true }, async () => {
+      await this.refreshPagos();
+      this.setState({ isLoadingRefreshControl: false });
+    });
+  };
+
   render() {
-    const { isLoading, pagos } = this.state;
+    const { isLoading, isLoadingRefreshControl, pagos } = this.state;
 
     return (
       <View style={{ flex: 1 }}>
@@ -150,6 +159,13 @@ class MisPagosScreen extends Component {
                 </Text>
               </Card>
             )}
+            refreshControl={
+              <RefreshControl
+                colors={["#9Bd35A", "#689F38"]}
+                refreshing={isLoadingRefreshControl}
+                onRefresh={this.handleRefreshControl}
+              />
+            }
           />
         )}
         {isLoading && (

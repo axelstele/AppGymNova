@@ -1,12 +1,13 @@
 // @ vendor
 import React, { Component } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
   ActivityIndicator,
   Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { Icon, ListItem, withTheme } from "react-native-elements";
 import CalendarStrip from "react-native-calendar-strip";
@@ -42,6 +43,7 @@ class HomeScreen extends Component {
 
     this.state = {
       isLoading: false,
+      isLoadingRefreshControl: false,
       selectedDate: moment(),
       clases: [],
       id_usuario: null,
@@ -202,9 +204,16 @@ class HomeScreen extends Component {
     });
   }
 
+  handleRefreshControl = () => {
+    this.setState({ isLoadingRefreshControl: true }, async () => {
+      await Promise.all([this.refreshClases(), this.refreshClasesMiembro()]);
+      this.setState({ isLoadingRefreshControl: false });
+    });
+  };
+
   render() {
     const { theme } = this.props;
-    const { isLoading, selectedDate, clases, clasesMiembro } = this.state;
+    const { clases, clasesMiembro, isLoading, isLoadingRefreshControl, selectedDate  } = this.state;
     return (
       <View style={{ flex: 1 }}>
         <CustomHeader
@@ -229,7 +238,12 @@ class HomeScreen extends Component {
           disabledDateNameStyle={{ color: "#CCCCCC" }}
           disabledDateNumberStyle={{ color: "#CCCCCC" }}
           onDateSelected={this.onChangeDate}
-          style={{ height: 150, paddingBottom: 10, paddingTop: 10, width: "100%" }}
+          style={{
+            height: 150,
+            paddingBottom: 10,
+            paddingTop: 10,
+            width: "100%",
+          }}
           refreshing={isLoading}
           locale={{
             name: "es",
@@ -341,6 +355,13 @@ class HomeScreen extends Component {
                 }
               />
             )}
+            refreshControl={
+              <RefreshControl
+                colors={["#9Bd35A", "#689F38"]}
+                refreshing={isLoadingRefreshControl}
+                onRefresh={this.handleRefreshControl}
+              />
+            }
           />
         )}
         {isLoading && (
