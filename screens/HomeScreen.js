@@ -213,7 +213,13 @@ class HomeScreen extends Component {
 
   render() {
     const { theme } = this.props;
-    const { clases, clasesMiembro, isLoading, isLoadingRefreshControl, selectedDate  } = this.state;
+    const {
+      clases,
+      clasesMiembro,
+      isLoading,
+      isLoadingRefreshControl,
+      selectedDate,
+    } = this.state;
     return (
       <View style={{ flex: 1 }}>
         <CustomHeader
